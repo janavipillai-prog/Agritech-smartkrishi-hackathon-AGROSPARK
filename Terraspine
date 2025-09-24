@@ -1,0 +1,103 @@
+import random
+import csv
+
+class NeedleUnit:
+    def __init__(self, needle_id):
+        self.id = needle_id
+        self.moisture = random.uniform(0.2, 0.4)  # initial soil moisture
+        self.temp = random.uniform(25, 30)        # °C
+        self.ph = random.uniform(5.5, 7.5)
+        self.ec = random.uniform(200, 800)        # conductivity µS/cm
+        self.clogged = False
+        self.cartridge_level = 1.0  # 100% storage
+        self.operational = True
+
+    def sense(self):
+        """Simulate environment changes."""
+        self.moisture -= random.uniform(0.01, 0.05)  # plants using water
+        self.temp += random.uniform(-0.5, 0.5)
+        self.ph += random.uniform(-0.05, 0.05)
+        self.ec += random.uniform(-10, 10)
+
+        if self.moisture < 0.1:
+            self.moisture = 0.1
+        if self.moisture > 0.6:
+            self.moisture = 0.6
+
+    def decide_actions(self, tank_level):
+        """AI decision making for irrigation, cleaning, pesticide."""
+        water_cmd = 0
+        clean_cmd = False
+        pesticide_cmd = False
+
+        if self.moisture < 0.25 and tank_level > 0:
+            water_cmd = 0.5  # liters
+        if random.random() < 0.05:
+            self.clogged = True
+        if self.clogged:
+            clean_cmd = True
+            self.clogged = False
+        if self.ph < 5.8 or self.ph > 7.2:
+            pesticide_cmd = True
+
+        return water_cmd, clean_cmd, pesticide_cmd
+
+class TerraspineSystem:
+    def __init__(self, num_needles=5, tank_capacity=1000):
+        self.needles = [NeedleUnit(i+1) for i in range(num_needles)]
+        self.tank_level = tank_capacity
+        self.capacity = tank_capacity
+        self.energy = 100  # % renewable energy
+
+    def harvest_rain(self):
+        if random.random() < 0.1:  # 10% chance rain
+            rain_amt = random.uniform(10, 50)  # liters
+            self.tank_level = min(self.capacity, self.tank_level + rain_amt)
+
+    def step(self, hour):
+        self.harvest_rain()
+        logs = []
+
+        for needle in self.needles:
+            needle.sense()
+            water_cmd, clean_cmd, pesticide_cmd = needle.decide_actions(self.tank_level)
+
+            if water_cmd > 0 and self.tank_level >= water_cmd:
+                self.tank_level -= water_cmd
+                needle.moisture += 0.1
+
+            if clean_cmd:
+                pass  # cleaning cycle simulated
+
+            log = {
+                "hour": hour,
+                "needle": needle.id,
+                "moisture": round(needle.moisture, 3),
+                "temp_c": round(needle.temp, 2),
+                "pH": round(needle.ph, 2),
+                "ec": round(needle.ec, 1),
+                "tank_level": round(self.tank_level, 1),
+                "water_supplied": water_cmd,
+                "cleaned": clean_cmd,
+                "pesticide": pesticide_cmd
+            }
+            logs.append(log)
+        return logs
+
+def run_simulation(hours=48, needles=5):
+    system = TerraspineSystem(num_needles=needles)
+    all_logs = []
+
+    for h in range(hours):
+        logs = system.step(h)
+        all_logs.extend(logs)
+
+    with open("terraspine_log.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=all_logs[0].keys())
+        writer.writeheader()
+        writer.writerows(all_logs)
+
+    print(f"Terraspine simulation completed for {hours} hours. Log saved as terraspine_log.csv.")
+
+if __name__ == "__main__":
+    run_simulation()

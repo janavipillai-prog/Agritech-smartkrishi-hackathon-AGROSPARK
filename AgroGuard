@@ -1,0 +1,59 @@
+import time
+import random
+from datetime import datetime
+
+class AgroGuard:
+    def __init__(self):
+        self.pollination_start = 9   # 9 AM
+        self.pollination_end = 13    # 1 PM
+        self.deterrents_active = False
+        self.alert_enabled = True
+
+    def is_pollination_time(self):
+        """Check if current time is within safe pollination window."""
+        hour = datetime.now().hour
+        return self.pollination_start <= hour < self.pollination_end
+
+    def detect_threat(self):
+        """Simulate PIR/Thermal sensor detection."""
+        # Randomly simulate detection (10% chance per cycle)
+        return random.random() < 0.1
+
+    def activate_deterrents(self):
+        """Turn on ultrasonic emitter + flashing lights."""
+        self.deterrents_active = True
+        print("[⚠️] Threat detected! Activating deterrents...")
+        print("   > Ultrasonic emitter ON")
+        print("   > Flashing LED lights ON")
+        # Optional camera snapshot simulation
+        print("   > (Optional) ESP32-CAM captures image")
+
+    def deactivate_deterrents(self):
+        """Turn off deterrents once threat is gone."""
+        if self.deterrents_active:
+            self.deterrents_active = False
+            print("[✅] Threat gone. System reset, deterrents OFF.")
+
+    def send_alert(self):
+        """Simulate sending alert to farmer (WhatsApp/SMS)."""
+        if self.alert_enabled:
+            print("   > Sending alert to farmer via WhatsApp/SMS...")
+
+    def run(self, cycles=20, delay=2):
+        """Main loop simulation."""
+        for _ in range(cycles):
+            if self.is_pollination_time():
+                print("[🌼] Pollination Mode active (deterrents OFF).")
+            else:
+                if self.detect_threat():
+                    self.activate_deterrents()
+                    self.send_alert()
+                else:
+                    self.deactivate_deterrents()
+
+            time.sleep(delay)
+
+
+if __name__ == "__main__":
+    agroguard = AgroGuard()
+    agroguard.run(cycles=15, delay=1)
